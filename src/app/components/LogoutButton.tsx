@@ -1,6 +1,5 @@
 'use client';
 import { logout } from '@/actions/auth';
-import React from 'react';
 
 export default function LogoutButton() {
 	return (

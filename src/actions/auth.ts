@@ -1,6 +1,8 @@
 'use server';
 import { signIn, signOut } from '@/auth';
 import prisma from '@/lib/db';
+import { saltAndHashPassword } from '@/utils/helper';
+import { on } from 'events';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -14,13 +16,20 @@ export async function loginWithCredentials(formData: FormData) {
 
 		return response;
 	} catch (error) {
+		console.error(error);
 		throw new Error('Cannot get the datas.');
 	}
 }
 
-export async function logout() {
-	await signOut({ redirectTo: '/' });
+export async function logout(email: string) {
+	try {
+		await prisma.online.delete({ where: { email } });
+		await signOut({ redirectTo: '/' });
+	} catch (error) {
+		console.error(error);
+	}
 	revalidatePath('/');
+	redirect('/');
 }
 
 export async function getUserFromDb(email, password) {
@@ -70,7 +79,7 @@ export async function registerNewUser(formData: FormData) {
 					username: formData.get('username') as string,
 					fullname: formData.get('fullname') as string,
 					email: formData.get('email') as string,
-					password: formData.get('password') as string,
+					password: saltAndHashPassword(formData.get('password') as string),
 				},
 			});
 		} else {
@@ -81,5 +90,15 @@ export async function registerNewUser(formData: FormData) {
 	} finally {
 		revalidatePath('/');
 		redirect('/');
+	}
+}
+
+export async function getOnlineUsers() {
+	try {
+		const onlineUsers = await prisma.online.findMany();
+		if (!onlineUsers) return null;
+		return onlineUsers;
+	} catch (error) {
+		console.error(error);
 	}
 }

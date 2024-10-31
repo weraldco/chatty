@@ -19,7 +19,6 @@ const LoginForm = () => {
 				router.push('/dashboard');
 			}
 		} catch (error) {
-			console.error(error);
 			setError('All fiend must be required.');
 		}
 	}

@@ -1,7 +1,7 @@
+import bcrypt from 'bcryptjs';
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
-import { getUserFromDb } from './actions/auth';
-// import { saltAndHashPassword } from './utils/helper';
+import prisma from './lib/db';
 
 export const {
 	handlers: { GET, POST },
@@ -23,21 +23,33 @@ export const {
 			authorize: async (credentials) => {
 				let user = null;
 				try {
-					// const pwHash = saltAndHashPassword(credentials.password);
-					const pwHash = credentials.password;
-					user = await getUserFromDb(credentials?.email, pwHash);
+					const email = credentials.email as string;
+
+					// const pwHash = credentials.password;
+					user = await prisma.user.findUnique({ where: { email } });
 
 					if (!user) {
 						throw new Error('User not found!');
 					} else {
-						const isMatch = user?.password === credentials?.password;
+						// const isMatch = user?.password === credentials?.password;
+						const isMatch = bcrypt.compareSync(
+							credentials.password as string,
+							user.password
+						);
 						if (isMatch) {
+							await prisma.online.create({
+								data: {
+									username: user.username,
+									email: email,
+								},
+							});
 							return user;
 						} else {
 							throw new Error('Incorrect password.');
 						}
 					}
 				} catch (error) {
+					console.error(error);
 					throw new Error('Something not right.');
 				}
 			},

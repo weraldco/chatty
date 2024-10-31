@@ -16,6 +16,7 @@ model User {
   fullname  String
   email     String     @unique
   password  String
+  isOnline  Boolean    @default(false)
   createdAt DateTime   @default(now())
   messages  Messages[]
   friends   Friends[]
@@ -34,4 +35,10 @@ model Friends {
   friends_id  String @id @default(cuid())
   user        User   @relation(fields: [userUser_id], references: [user_id])
   userUser_id String
+}
+
+model Online {
+  id       String @id @default(cuid())
+  username String
+  email    String @unique
 }
